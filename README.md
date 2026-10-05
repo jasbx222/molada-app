@@ -65,3 +65,26 @@ npx tsc --noEmit
 - الخط: Cairo (`@expo-google-fonts/cairo`).
 - الألوان: تيل `#063A46` · كهرمان `#F5A623` (تصميم v4).
 - على الويب تُستخدم تخزين محلي بدلاً من SQLite.
+
+
+## الـ API الحقيقي / Real API
+
+الواجهة `src/api` تدعم وضعين عبر `app.json` → `expo.extra`:
+
+| العلم | المعنى |
+|---|---|
+| `useMockApi: true` | البيانات التجريبية المحلية (الافتراضي للبناء العام على المنفذ 4310) |
+| `useMockApi: false` | عميل HTTP تجاه ASP.NET على `apiBaseUrl` |
+
+```json
+"extra": {
+  "apiBaseUrl": "http://YOUR_LAN_IP:5080/api/v1",
+  "useMockApi": false
+}
+```
+
+- تسجيل الدخول يعيد JWT + refresh؛ `session.token` = access token.
+- المزامنة تستخدم `/collector/sync` (ومكافئها على السيرفر `/device/sync`).
+- البناء العام المنشور (Cloudflare / port 4310) يبقى على mock — لا تشير إلى `localhost` من نفق عام.
+- حساب تجريبي على الباك: `07701234567` / `1234`.
+

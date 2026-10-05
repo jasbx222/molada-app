@@ -6,7 +6,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { api } from '../api';
+import { api, setHttpTokens, USE_MOCK_API } from '../api';
 import { localDb, initDb } from '../db';
 import { newUuid } from '../utils/uuid';
 import { normalizeArabic, subscriberSearchText } from '../utils/arabic';
@@ -124,6 +124,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       await initDb();
       await refreshLocal();
+      const sess = await localDb.getSession();
+      const rt = await localDb.getMeta('refreshToken');
+      if (sess?.token) {
+        setHttpTokens(sess.token, rt || null);
+      }
       setReady(true);
     })().catch((err) => {
       console.warn('init failed', err);
@@ -136,6 +141,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await localDb.setMeta('deviceId', deviceId);
     const res = await api.login({ phone, pin, deviceId });
     await localDb.setMeta('session', JSON.stringify(res.session));
+    if (res.refreshToken) {
+      await localDb.setMeta('refreshToken', res.refreshToken);
+    }
+    if (res.accessToken) {
+      setHttpTokens(res.accessToken, res.refreshToken ?? null);
+    }
     setSession(res.session);
   }, []);
 
@@ -143,8 +154,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const sess = session ?? (await localDb.getSession());
     if (!sess) throw new Error('يجب تسجيل الدخول أولاً');
     const payload = await api.bootstrap(sess.token);
+    // Real API bootstrap may omit token; keep JWT from login.
+    const nextSession = {
+      ...payload.session,
+      token: payload.session.token || sess.token,
+    };
     await localDb.replaceBootstrap(
-      payload.session,
+      nextSession,
       payload.subscribers,
       payload.invoices,
       payload.receiptRange,
@@ -152,7 +168,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await localDb.setMeta('bootstrappedAt', payload.bootstrappedAt);
     await localDb.setMeta('lastSyncAt', payload.bootstrappedAt);
     setLastSyncAt(payload.bootstrappedAt);
-    setSession(payload.session);
+    setSession(nextSession);
     setSubscribers(payload.subscribers);
     setInvoices(payload.invoices);
     const pays = await localDb.listPayments();
@@ -236,6 +252,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [session, syncQueue]);
 
   const logout = useCallback(async () => {
+    const rt = await localDb.getMeta('refreshToken');
+    if (!USE_MOCK_API && api.logout) {
+      await api.logout(rt ?? undefined).catch(() => undefined);
+    }
+    await localDb.setMeta('refreshToken', '');
+    setHttpTokens(null, null);
     setSession(null);
     setSubscribers([]);
     setInvoices([]);
