@@ -1,6 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Text, View, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { colors, fonts } from '../../src/theme';
 import { useApp } from '../../src/store/AppContext';
@@ -14,31 +15,67 @@ function TabIcon({
 }) {
   if (name === 'list') {
     return (
-      <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-        <Path d="M4 6h16M4 12h16M4 18h10" stroke={color} strokeWidth={2} strokeLinecap="round" />
+      <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+        <Path
+          d="M4 6h16M4 12h16M4 18h10"
+          stroke={color}
+          strokeWidth={2}
+          strokeLinecap="round"
+        />
       </Svg>
     );
   }
   if (name === 'queue') {
     return (
-      <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-        <Path d="M4 7h16v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7z" stroke={color} strokeWidth={2} strokeLinecap="round" />
-        <Path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" stroke={color} strokeWidth={2} strokeLinecap="round" />
-        <Path d="M12 12v3" stroke={color} strokeWidth={2} strokeLinecap="round" />
+      <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+        <Path
+          d="M4 7h16v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7z"
+          stroke={color}
+          strokeWidth={2}
+          strokeLinecap="round"
+        />
+        <Path
+          d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"
+          stroke={color}
+          strokeWidth={2}
+          strokeLinecap="round"
+        />
+        <Path
+          d="M12 12v3"
+          stroke={color}
+          strokeWidth={2}
+          strokeLinecap="round"
+        />
         <Circle cx="12" cy="17" r="0.8" fill={color} />
       </Svg>
     );
   }
   return (
-    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-      <Path d="M9 11l3 3L22 4" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-      <Path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M9 11l3 3L22 4"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </Svg>
   );
 }
 
 export default function CollectorTabs() {
   const { unsyncedCount } = useApp();
+  const insets = useSafeAreaInsets();
+  // Cairo labels need extra line box; keep icon + label clear of home indicator
+  const bottomPad = Math.max(insets.bottom, Platform.OS === 'web' ? 10 : 8);
+  const tabBarHeight = 64 + bottomPad;
 
   return (
     <Tabs
@@ -49,22 +86,36 @@ export default function CollectorTabs() {
         tabBarLabelStyle: {
           fontFamily: fonts.semiBold,
           fontSize: 12,
+          lineHeight: 18,
+          marginTop: 0,
+          includeFontPadding: false,
+        },
+        tabBarIconStyle: {
+          marginTop: 4,
+        },
+        tabBarItemStyle: {
+          height: 64,
+          paddingTop: 6,
+          paddingBottom: 4,
         },
         tabBarStyle: {
-          height: 64,
-          paddingBottom: 8,
-          paddingTop: 6,
+          height: tabBarHeight,
+          paddingBottom: bottomPad,
+          paddingTop: 0,
           borderTopColor: colors.border,
           borderTopWidth: 1.5,
           backgroundColor: colors.surface,
         },
+        tabBarAllowFontScaling: false,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: 'القائمة',
-          tabBarIcon: ({ color }) => <TabIcon name="list" color={String(color)} />,
+          tabBarIcon: ({ color }) => (
+            <TabIcon name="list" color={String(color)} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -89,7 +140,9 @@ export default function CollectorTabs() {
         name="eod"
         options={{
           title: 'إنهاء اليوم',
-          tabBarIcon: ({ color }) => <TabIcon name="eod" color={String(color)} />,
+          tabBarIcon: ({ color }) => (
+            <TabIcon name="eod" color={String(color)} />
+          ),
         }}
       />
     </Tabs>
@@ -113,5 +166,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     fontSize: 9,
     color: colors.text,
+    includeFontPadding: false,
+    lineHeight: 12,
   },
 });

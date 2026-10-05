@@ -1,3 +1,4 @@
+import { formatIqdWithUnit } from './money';
 import { SERVICE_TYPE_AR, ServiceType } from '../types/models';
 
 export function serviceTypeLabel(type: ServiceType): string {
@@ -48,11 +49,11 @@ export function buildWhatsAppReceiptMessage(params: {
     `المشترك: ${params.subscriberName}`,
     `الشهر: ${params.cycleLabel}`,
     `الأمبيرات: ${params.amps} · ${params.serviceType}`,
-    `سعر الأمبير: ${params.ampPrice.toLocaleString('en-US')} د.ع`,
-    `السعر الرسمي: ${params.officialAmpPrice.toLocaleString('en-US')} د.ع (مطابق للقرار)`,
-    `المطلوب: ${params.totalDue.toLocaleString('en-US')} د.ع`,
-    `المدفوع: ${params.paid.toLocaleString('en-US')} د.ع`,
-    `الباقي: ${params.remaining.toLocaleString('en-US')} د.ع`,
+    `سعر الأمبير: ${formatIqdWithUnit(params.ampPrice)}`,
+    `السعر الرسمي: ${formatIqdWithUnit(params.officialAmpPrice)} (مطابق للقرار)`,
+    `المطلوب: ${formatIqdWithUnit(params.totalDue)}`,
+    `المدفوع: ${formatIqdWithUnit(params.paid)}`,
+    `الباقي: ${formatIqdWithUnit(params.remaining)}`,
     `الجابي: ${params.collectorName}`,
     `الوقت: ${params.createdAt}`,
     `كشف الحساب: ${params.statementUrl}`,

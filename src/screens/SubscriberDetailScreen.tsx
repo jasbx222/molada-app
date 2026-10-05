@@ -11,7 +11,7 @@ import {
 import { useApp } from '../store/AppContext';
 import { colors, fonts, radius, shadow, spacing } from '../theme';
 import { addressLine, ampLine } from '../utils/format';
-import { formatIqd } from '../utils/money';
+import { formatIqd, formatIqdWithUnit } from '../utils/money';
 
 export function SubscriberDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -59,7 +59,7 @@ export function SubscriberDetailScreen() {
           <Row k="الباقي" v={formatIqd(invoice.remaining)} highlight />
           <Row
             k="السعر الرسمي"
-            v={`${formatIqd(invoice.officialAmpPrice)} د.ع`}
+            v={formatIqdWithUnit(invoice.officialAmpPrice)}
           />
         </View>
 

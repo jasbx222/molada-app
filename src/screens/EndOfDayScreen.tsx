@@ -6,17 +6,15 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { AmountText, PrimaryButton, ScreenHeader } from '../components';
 import { useApp } from '../store/AppContext';
 import { colors, fonts, radius, shadow, spacing } from '../theme';
-import { formatIqd } from '../utils/money';
+import { formatIqdWithUnit } from '../utils/money';
 
 export function EndOfDayScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const {
     session,
     online,
@@ -135,7 +133,7 @@ export function EndOfDayScreen() {
           </View>
           <View style={styles.row}>
             <Text style={styles.rowK}>مجموع النظام</Text>
-            <Text style={styles.rowBig}>{formatIqd(totals.collectedToday)}</Text>
+            <Text style={styles.rowBig}>{formatIqdWithUnit(totals.collectedToday)}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.rowK}>يسلّمه الجابي (يدوياً)</Text>
@@ -181,13 +179,6 @@ export function EndOfDayScreen() {
           loading={loading}
           disabled={shiftRequested}
           height={64}
-        />
-        <PrimaryButton
-          label="رجوع للقائمة"
-          variant="ghost"
-          onPress={() => router.replace('/(collector)')}
-          height={48}
-          style={{ marginTop: 8 }}
         />
       </View>
     </View>

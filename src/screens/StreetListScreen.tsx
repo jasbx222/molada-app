@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   chipNOff: { backgroundColor: '#F0EBE3' },
   chipNText: {
     fontFamily: fonts.extraBold,
-    fontSize: 11,
+    fontSize: 13,
     color: colors.white,
   },
   chipNTextOff: { color: colors.brand },

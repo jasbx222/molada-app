@@ -26,7 +26,7 @@ import {
   serviceTypeLabel,
   waMeUrl,
 } from '../utils/format';
-import { formatIqd } from '../utils/money';
+import { formatIqd, formatIqdWithUnit } from '../utils/money';
 
 export function ReceiptScreen() {
   const { paymentId } = useLocalSearchParams<{ paymentId: string }>();
@@ -124,7 +124,7 @@ export function ReceiptScreen() {
             />
             <Row
               k="سعر الأمبير"
-              v={`${formatIqd(invoice.ampPrice)} د.ع`}
+              v={formatIqdWithUnit(invoice.ampPrice)}
               money
             />
           </View>
@@ -135,27 +135,26 @@ export function ReceiptScreen() {
               <Text style={styles.offB}>مطابق للقرار</Text>
             </View>
             <Text style={styles.offR}>
-              {formatIqd(invoice.officialAmpPrice)} د.ع
+              {formatIqdWithUnit(invoice.officialAmpPrice)}
             </Text>
           </View>
 
           <View style={styles.moneyBlock}>
             <View style={styles.mRow}>
               <Text style={styles.mK}>المطلوب</Text>
-              <Text style={styles.mV}>{formatIqd(invoice.totalDue)}</Text>
+              <Text style={styles.mV}>{formatIqdWithUnit(invoice.totalDue)}</Text>
             </View>
             <View style={styles.mRow}>
               <Text style={styles.mK}>المدفوع</Text>
               <AmountText
                 amount={payment.amount}
-                size={32}
+                size={28}
                 color={colors.moneyBright}
-                showUnit={false}
               />
             </View>
             <View style={styles.mRow}>
               <Text style={styles.mK}>الباقي</Text>
-              <Text style={styles.mV}>{formatIqd(invoice.remaining)}</Text>
+              <Text style={styles.mV}>{formatIqdWithUnit(invoice.remaining)}</Text>
             </View>
           </View>
 
@@ -179,7 +178,7 @@ export function ReceiptScreen() {
         </View>
 
         <PrimaryButton
-          label="إرسال عبر واتساب"
+          label="مشاركة واتساب"
           onPress={onWhatsApp}
           height={72}
         />

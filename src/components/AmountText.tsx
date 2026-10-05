@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, StyleSheet, TextStyle } from 'react-native';
 import { colors, fonts } from '../theme';
-import { formatIqd } from '../utils/money';
+import { formatIqd, formatIqdWithUnit } from '../utils/money';
 
 interface Props {
   amount: number;
@@ -17,24 +17,23 @@ export function AmountText({
   size = 28,
   color = colors.money,
   showUnit = true,
-  unitSize,
   style,
 }: Props) {
+  if (!showUnit) {
+    return (
+      <Text
+        style={[styles.amt, { fontSize: size, color, lineHeight: size * 1.15 }, style]}
+      >
+        {formatIqd(amount)}
+      </Text>
+    );
+  }
+
   return (
-    <Text style={[styles.amt, { fontSize: size, color, lineHeight: size * 1.1 }, style]}>
-      {formatIqd(amount)}
-      {showUnit ? (
-        <Text
-          style={{
-            fontSize: unitSize ?? Math.max(12, size * 0.4),
-            color: colors.muted,
-            fontFamily: fonts.semiBold,
-          }}
-        >
-          {' '}
-          د.ع
-        </Text>
-      ) : null}
+    <Text
+      style={[styles.amt, { fontSize: size, color, lineHeight: size * 1.15 }, style]}
+    >
+      {formatIqdWithUnit(amount)}
     </Text>
   );
 }
@@ -42,6 +41,7 @@ export function AmountText({
 const styles = StyleSheet.create({
   amt: {
     fontFamily: fonts.extraBold,
+    // Keep the whole "15,000 د.ع" run as one LTR unit inside RTL layouts
     writingDirection: 'ltr',
   },
 });

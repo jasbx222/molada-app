@@ -19,7 +19,7 @@ import {
 import { useApp } from '../store/AppContext';
 import { colors, fonts, radius, shadow, spacing } from '../theme';
 import { addressLine, ampLine, padReceiptNo } from '../utils/format';
-import { formatIqd } from '../utils/money';
+import { formatIqd, formatIqdWithUnit } from '../utils/money';
 import { localDb } from '../db';
 
 type Mode = 'full' | 'partial';
@@ -144,25 +144,14 @@ export function ReceivePaymentScreen() {
 
         <View style={styles.dueCard}>
           <Text style={styles.dueLbl}>المطلوب الآن</Text>
-          <AmountText amount={due} size={52} />
-          <View style={styles.breakdown}>
-            <View style={styles.bd}>
-              <Text style={styles.bdL}>فاتورة الشهر</Text>
-              <Text style={styles.bdV}>
-                {formatIqd(invoice.invoiceAmount)}
-              </Text>
-            </View>
-            <View style={styles.bd}>
-              <Text style={styles.bdL}>دين مرحّل</Text>
-              <Text style={styles.bdV}>{formatIqd(invoice.carriedDebt)}</Text>
-            </View>
-            <View style={styles.bd}>
-              <Text style={styles.bdL}>مدفوع سابقاً</Text>
-              <Text style={styles.bdV}>{formatIqd(invoice.paidAmount)}</Text>
-            </View>
-          </View>
+          <AmountText amount={due} size={44} />
+          <Text style={styles.detailLine}>
+            فاتورة {formatIqd(invoice.invoiceAmount)} · دين{' '}
+            {formatIqd(invoice.carriedDebt)} · مدفوع{' '}
+            {formatIqd(invoice.paidAmount)}
+          </Text>
           <Text style={styles.official}>
-            السعر الرسمي: {formatIqd(invoice.officialAmpPrice)} د.ع / أمبير
+            السعر الرسمي: {formatIqdWithUnit(invoice.officialAmpPrice)} / أمبير
           </Text>
         </View>
 
@@ -208,8 +197,7 @@ export function ReceivePaymentScreen() {
             <AmountPad value={amount} onChange={setAmount} max={due} />
           ) : (
             <View style={styles.field}>
-              <Text style={styles.fieldUnit}>د.ع</Text>
-              <Text style={styles.fieldNum}>{formatIqd(amount)}</Text>
+              <Text style={styles.fieldNum}>{formatIqdWithUnit(amount)}</Text>
             </View>
           )}
           <View style={styles.quick}>
@@ -281,7 +269,7 @@ export function ReceivePaymentScreen() {
       </ScrollView>
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <PrimaryButton
-          label={`تأكيد استلام ${formatIqd(amount)} د.ع`}
+          label={`تأكيد استلام ${formatIqdWithUnit(amount)}`}
           onPress={onConfirm}
           loading={loading}
           height={64}
@@ -348,33 +336,21 @@ const styles = StyleSheet.create({
     color: colors.muted,
     marginBottom: 8,
   },
-  breakdown: {
-    marginTop: 18,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    flexDirection: 'row',
-    alignSelf: 'stretch',
-    gap: 8,
-  },
-  bd: { flex: 1, alignItems: 'center' },
-  bdL: {
+  detailLine: {
+    marginTop: 12,
     fontFamily: fonts.semiBold,
-    fontSize: 11,
+    fontSize: 13,
     color: colors.muted,
-    marginBottom: 4,
-  },
-  bdV: {
-    fontFamily: fonts.bold,
-    fontSize: 15,
-    color: colors.text,
-    writingDirection: 'ltr',
+    textAlign: 'center',
+    writingDirection: 'rtl',
+    lineHeight: 20,
   },
   official: {
-    marginTop: 12,
+    marginTop: 8,
     fontFamily: fonts.semiBold,
     fontSize: 12,
     color: colors.brandSoft,
+    textAlign: 'center',
   },
   mode: { flexDirection: 'row', gap: 10 },
   modeBtn: {
@@ -415,24 +391,18 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   field: {
-    height: 88,
+    height: 72,
     borderWidth: 2.5,
     borderColor: colors.money,
     borderRadius: radius.lg,
     backgroundColor: '#FFFBF3',
     paddingHorizontal: 20,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  fieldUnit: {
-    fontFamily: fonts.bold,
-    fontSize: 18,
-    color: colors.muted,
+    justifyContent: 'center',
   },
   fieldNum: {
     fontFamily: fonts.extraBold,
-    fontSize: 40,
+    fontSize: 32,
     color: colors.money,
     writingDirection: 'ltr',
   },

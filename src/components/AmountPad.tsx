@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { colors, fonts, radius } from '../theme';
-import { formatIqd } from '../utils/money';
+import { formatIqdWithUnit } from '../utils/money';
 
 interface Props {
   value: number;
@@ -28,8 +28,7 @@ export function AmountPad({ value, onChange, max }: Props) {
   return (
     <View style={styles.wrap}>
       <View style={styles.display}>
-        <Text style={styles.unit}>د.ع</Text>
-        <Text style={styles.num}>{formatIqd(value)}</Text>
+        <Text style={styles.num}>{formatIqdWithUnit(value)}</Text>
       </View>
       <View style={styles.grid}>
         {KEYS.map((k) => (
@@ -49,24 +48,18 @@ export function AmountPad({ value, onChange, max }: Props) {
 const styles = StyleSheet.create({
   wrap: { gap: 12 },
   display: {
-    height: 88,
+    height: 72,
     borderWidth: 2.5,
     borderColor: colors.money,
     borderRadius: radius.lg,
     backgroundColor: '#FFFBF3',
     paddingHorizontal: 20,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  unit: {
-    fontFamily: fonts.bold,
-    fontSize: 18,
-    color: colors.muted,
+    justifyContent: 'center',
   },
   num: {
     fontFamily: fonts.extraBold,
-    fontSize: 40,
+    fontSize: 32,
     color: colors.money,
     writingDirection: 'ltr',
   },
