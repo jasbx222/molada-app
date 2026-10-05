@@ -32,6 +32,8 @@ export function PrimaryButton({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!(disabled || loading) }}
       onPress={onPress}
       disabled={disabled || loading}
       style={({ pressed }) => [
@@ -41,7 +43,8 @@ export function PrimaryButton({
         isBrand && styles.brand,
         !isGhost && !isBrand && styles.money,
         (disabled || loading) && styles.disabled,
-        pressed && !disabled && { opacity: 0.9 },
+        (disabled || loading) && isGhost && styles.disabledGhost,
+        pressed && !disabled && !loading && { opacity: 0.9 },
         style,
       ]}
     >
@@ -53,6 +56,7 @@ export function PrimaryButton({
             styles.label,
             isGhost && styles.labelGhost,
             isBrand && styles.labelBrand,
+            (disabled || loading) && styles.labelDisabled,
           ]}
         >
           {label}
@@ -81,7 +85,17 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.border,
   },
-  disabled: { opacity: 0.5 },
+  disabled: {
+    opacity: 0.42,
+    shadowOpacity: 0,
+    elevation: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  disabledGhost: {
+    backgroundColor: '#F0EBE3',
+    borderColor: '#D9D0C3',
+  },
   label: {
     fontFamily: fonts.extraBold,
     fontSize: 18,
@@ -94,5 +108,8 @@ const styles = StyleSheet.create({
   },
   labelBrand: {
     color: colors.white,
+  },
+  labelDisabled: {
+    color: colors.muted,
   },
 });

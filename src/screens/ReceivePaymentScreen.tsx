@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -17,7 +17,7 @@ import {
   ScreenHeader,
 } from '../components';
 import { useApp } from '../store/AppContext';
-import { colors, fonts, radius, shadow, spacing } from '../theme';
+import { colors, fonts, radius, shadow } from '../theme';
 import { addressLine, ampLine, padReceiptNo } from '../utils/format';
 import { formatIqd, formatIqdWithUnit } from '../utils/money';
 import { localDb } from '../db';
@@ -28,8 +28,7 @@ export function ReceivePaymentScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { getInvoiceFor, subscribers, receivePayment, online } =
-    useApp();
+  const { getInvoiceFor, subscribers, receivePayment, online } = useApp();
   const subscriber = subscribers.find((s) => s.id === id);
   const invoice = id ? getInvoiceFor(id) : undefined;
 
@@ -40,6 +39,8 @@ export function ReceivePaymentScreen() {
     'full',
   );
   const [nextReceipt, setNextReceipt] = useState<number | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const amountAnchorRef = useRef<View>(null);
 
   React.useEffect(() => {
     if (invoice) {
@@ -53,6 +54,29 @@ export function ReceivePaymentScreen() {
   }, [invoice?.id, invoice?.remaining]);
 
   const due = invoice?.remaining ?? 0;
+
+  const amountError = useMemo(() => {
+    if (mode !== 'partial') return null;
+    if (amount <= 0) return 'اكتب المبلغ المستلم';
+    if (amount > due) return `المبلغ أكثر من المطلوب (${formatIqd(due)} د.ع)`;
+    return null;
+  }, [mode, amount, due]);
+
+  const canConfirm = useMemo(() => {
+    if (mode === 'full') return due > 0;
+    if (amount <= 0) return false;
+    if (amount > due) return false;
+    return true;
+  }, [mode, amount, due]);
+
+  const confirmAmount = mode === 'full' ? due : amount === due ? due : amount;
+
+  const scrollAmountIntoView = () => {
+    // Keep «المبلغ المستلم» visible above the sticky footer while typing
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    });
+  };
 
   const applyQuick = (q: 'full' | 'half' | 'quarter') => {
     setQuick(q);
@@ -74,19 +98,36 @@ export function ReceivePaymentScreen() {
       setAmount(due);
       setQuick('full');
     } else {
+      // Partial: reset to 0; confirm disabled until valid amount
+      setAmount(0);
       setQuick(null);
+      setTimeout(scrollAmountIntoView, 50);
     }
+  };
+
+  const onAmountChange = (n: number) => {
+    setAmount(n);
+    setQuick(null);
+    if (n === due && due > 0) {
+      // Entered amount equals due → treat as full
+      setMode('full');
+      setQuick('full');
+    } else if (mode === 'full' && n !== due) {
+      setMode('partial');
+    }
+    scrollAmountIntoView();
   };
 
   const onConfirm = async () => {
     if (!subscriber || !invoice) return;
-    if (amount <= 0) {
-      Alert.alert('تنبيه', 'أدخل مبلغاً صحيحاً');
-      return;
-    }
+    if (!canConfirm) return;
+    const payAmount = confirmAmount;
+    if (payAmount <= 0) return;
+    if (payAmount > due) return;
     setLoading(true);
     try {
-      const payment = await receivePayment(subscriber.id, amount);
+      const payment = await receivePayment(subscriber.id, payAmount);
+      // Replace so back from receipt returns to list, not a stacked receive
       router.replace(`/receipt/${payment.uuid}`);
     } catch (e) {
       Alert.alert('خطأ', e instanceof Error ? e.message : 'فشل الحفظ');
@@ -105,9 +146,10 @@ export function ReceivePaymentScreen() {
   }
 
   return (
-    <View style={[styles.root, { paddingBottom: insets.bottom }]}>
+    <View style={styles.root}>
       <ScreenHeader title="استلام كاش" online={online} />
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.body}
         keyboardShouldPersistTaps="handled"
       >
@@ -157,6 +199,9 @@ export function ReceivePaymentScreen() {
 
         <View style={styles.mode}>
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="استلام كامل"
+            accessibilityState={{ selected: mode === 'full' }}
             onPress={() => selectMode('full')}
             style={[styles.modeBtn, mode === 'full' && styles.modeOn]}
           >
@@ -177,6 +222,9 @@ export function ReceivePaymentScreen() {
             </Text>
           </Pressable>
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="استلام جزئي"
+            accessibilityState={{ selected: mode === 'partial' }}
             onPress={() => selectMode('partial')}
             style={[styles.modeBtn, mode === 'partial' && styles.modeOn]}
           >
@@ -191,10 +239,15 @@ export function ReceivePaymentScreen() {
           </Pressable>
         </View>
 
-        <View style={styles.entry}>
+        <View style={styles.entry} ref={amountAnchorRef} collapsable={false}>
           <Text style={styles.entryLbl}>المبلغ المستلم</Text>
           {mode === 'partial' ? (
-            <AmountPad value={amount} onChange={setAmount} max={due} />
+            <AmountPad
+              value={amount}
+              onChange={onAmountChange}
+              max={due}
+              error={amountError}
+            />
           ) : (
             <View style={styles.field}>
               <AmountText amount={amount} size={32} />
@@ -210,6 +263,8 @@ export function ReceivePaymentScreen() {
             ).map(([k, label]) => (
               <Pressable
                 key={k}
+                accessibilityRole="button"
+                accessibilityLabel={label}
                 onPress={() => applyQuick(k)}
                 style={[styles.q, quick === k && styles.qOn]}
               >
@@ -239,7 +294,7 @@ export function ReceivePaymentScreen() {
               />
             </Svg>
             <Text style={styles.noteText}>
-              للجزئي: عدّل المبلغ من اللوحة. الكامل يحفظ بالمبلغ المطلوب كاملاً.
+              للجزئي: عدّل المبلغ من اللوحة. إذا ساوى المطلوب يُعامل كاستلام كامل.
             </Text>
           </View>
         ) : (
@@ -260,18 +315,31 @@ export function ReceivePaymentScreen() {
               />
             </Svg>
             <Text style={styles.noteText}>
-              للجزئي: اضغط «استلام جزئي» ثم عدّل المبلغ. الكامل يحفظ فوراً بدون
+              للجزئي: اضغط «استلام جزئي» ثم اكتب المبلغ. الكامل يحفظ فوراً بدون
               لوحة أرقام.
             </Text>
           </View>
         )}
-
       </ScrollView>
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+
+      {/* Sticky footer — amount display sits just above when scrolled */}
+      <View
+        style={[
+          styles.footer,
+          { paddingBottom: Math.max(insets.bottom, 12) },
+        ]}
+      >
+        {mode === 'partial' ? (
+          <View style={styles.pinnedAmount}>
+            <Text style={styles.pinnedLbl}>المبلغ المستلم</Text>
+            <AmountText amount={amount} size={22} />
+          </View>
+        ) : null}
         <PrimaryButton
-          label={`تأكيد استلام ${formatIqdWithUnit(amount)}`}
+          label={`تأكيد استلام ${formatIqdWithUnit(confirmAmount)}`}
           onPress={onConfirm}
           loading={loading}
+          disabled={!canConfirm}
           height={64}
         />
         <PrimaryButton
@@ -446,6 +514,23 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+  },
+  pinnedAmount: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFBF3',
+    borderWidth: 1.5,
+    borderColor: colors.money,
+    borderRadius: radius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginBottom: 10,
+  },
+  pinnedLbl: {
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
+    color: colors.muted,
   },
   hint: {
     marginTop: 12,
