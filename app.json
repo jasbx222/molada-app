@@ -2,7 +2,7 @@
   "expo": {
     "name": "مولّدة",
     "slug": "molada",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "molada",
@@ -25,7 +25,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "app.molada.collector",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/favicon.png",
