@@ -197,7 +197,7 @@ export function ReceivePaymentScreen() {
             <AmountPad value={amount} onChange={setAmount} max={due} />
           ) : (
             <View style={styles.field}>
-              <Text style={styles.fieldNum}>{formatIqdWithUnit(amount)}</Text>
+              <AmountText amount={amount} size={32} />
             </View>
           )}
           <View style={styles.quick}>
@@ -399,12 +399,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  fieldNum: {
-    fontFamily: fonts.extraBold,
-    fontSize: 32,
-    color: colors.money,
-    writingDirection: 'ltr',
   },
   quick: { flexDirection: 'row', gap: 8, marginTop: 14 },
   q: {

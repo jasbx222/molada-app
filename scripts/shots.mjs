@@ -19,7 +19,7 @@ async function shot(name) {
   console.log('saved', file);
 }
 
-await page.goto('http://127.0.0.1:3457/login', { waitUntil: 'networkidle', timeout: 60000 });
+await page.goto('http://127.0.0.1:3465/login', { waitUntil: 'networkidle', timeout: 60000 });
 await page.evaluate(() => localStorage.clear());
 await page.reload({ waitUntil: 'networkidle' });
 await page.waitForTimeout(1000);
@@ -42,11 +42,11 @@ await page.getByText(/تأكيد استلام/).click();
 await page.waitForTimeout(1600);
 await shot('receipt.png');
 
-await page.goto('http://127.0.0.1:3457/eod', { waitUntil: 'networkidle' });
+await page.goto('http://127.0.0.1:3465/eod', { waitUntil: 'networkidle' });
 await page.waitForTimeout(1200);
 await shot('end-of-day.png');
 
-await page.goto('http://127.0.0.1:3457/queue', { waitUntil: 'networkidle' });
+await page.goto('http://127.0.0.1:3465/queue', { waitUntil: 'networkidle' });
 await page.waitForTimeout(1000);
 await shot('queue.png');
 

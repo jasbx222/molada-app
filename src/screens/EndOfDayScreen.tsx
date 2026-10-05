@@ -11,7 +11,6 @@ import Svg, { Path } from 'react-native-svg';
 import { AmountText, PrimaryButton, ScreenHeader } from '../components';
 import { useApp } from '../store/AppContext';
 import { colors, fonts, radius, shadow, spacing } from '../theme';
-import { formatIqdWithUnit } from '../utils/money';
 
 export function EndOfDayScreen() {
   const insets = useSafeAreaInsets();
@@ -89,11 +88,7 @@ export function EndOfDayScreen() {
           </View>
           <View style={styles.stat}>
             <Text style={styles.statL}>متوسط الوصل</Text>
-            <AmountText
-              amount={totals.averageReceipt}
-              size={22}
-              showUnit={false}
-            />
+            <AmountText amount={totals.averageReceipt} size={20} />
           </View>
           <View style={styles.stat}>
             <Text style={styles.statL}>متبقي بالخط</Text>
@@ -133,7 +128,7 @@ export function EndOfDayScreen() {
           </View>
           <View style={styles.row}>
             <Text style={styles.rowK}>مجموع النظام</Text>
-            <Text style={styles.rowBig}>{formatIqdWithUnit(totals.collectedToday)}</Text>
+            <AmountText amount={totals.collectedToday} size={22} style={styles.rowBig} />
           </View>
           <View style={styles.row}>
             <Text style={styles.rowK}>يسلّمه الجابي (يدوياً)</Text>
@@ -312,10 +307,7 @@ const styles = StyleSheet.create({
     color: colors.muted,
   },
   rowBig: {
-    fontFamily: fonts.extraBold,
-    fontSize: 22,
     color: colors.money,
-    writingDirection: 'ltr',
   },
   rowMuted: {
     fontFamily: fonts.bold,

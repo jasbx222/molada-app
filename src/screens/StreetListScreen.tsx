@@ -71,9 +71,8 @@ export function StreetListScreen() {
             <Text style={styles.sLbl}>مستلم اليوم</Text>
             <AmountText
               amount={totals.collectedToday}
-              size={22}
+              size={20}
               color={colors.moneyBright}
-              showUnit={false}
             />
           </View>
           <View style={styles.sCard}>

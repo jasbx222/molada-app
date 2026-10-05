@@ -26,7 +26,7 @@ import {
   serviceTypeLabel,
   waMeUrl,
 } from '../utils/format';
-import { formatIqd, formatIqdWithUnit } from '../utils/money';
+import { formatIqdWithUnit } from '../utils/money';
 
 export function ReceiptScreen() {
   const { paymentId } = useLocalSearchParams<{ paymentId: string }>();
@@ -134,15 +134,17 @@ export function ReceiptScreen() {
               <Text style={styles.offL}>السعر الرسمي للمحافظة</Text>
               <Text style={styles.offB}>مطابق للقرار</Text>
             </View>
-            <Text style={styles.offR}>
-              {formatIqdWithUnit(invoice.officialAmpPrice)}
-            </Text>
+            <AmountText
+              amount={invoice.officialAmpPrice}
+              size={20}
+              color={colors.moneyDark}
+            />
           </View>
 
           <View style={styles.moneyBlock}>
             <View style={styles.mRow}>
               <Text style={styles.mK}>المطلوب</Text>
-              <Text style={styles.mV}>{formatIqdWithUnit(invoice.totalDue)}</Text>
+              <AmountText amount={invoice.totalDue} size={18} color={colors.white} />
             </View>
             <View style={styles.mRow}>
               <Text style={styles.mK}>المدفوع</Text>
@@ -154,7 +156,7 @@ export function ReceiptScreen() {
             </View>
             <View style={styles.mRow}>
               <Text style={styles.mK}>الباقي</Text>
-              <Text style={styles.mV}>{formatIqdWithUnit(invoice.remaining)}</Text>
+              <AmountText amount={invoice.remaining} size={18} color={colors.white} />
             </View>
           </View>
 
@@ -318,12 +320,6 @@ const styles = StyleSheet.create({
     color: colors.brand,
     marginTop: 2,
   },
-  offR: {
-    fontFamily: fonts.extraBold,
-    fontSize: 20,
-    color: colors.moneyDark,
-    writingDirection: 'ltr',
-  },
   moneyBlock: {
     marginHorizontal: 14,
     marginBottom: 12,
@@ -343,12 +339,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     fontSize: 13,
     color: 'rgba(255,255,255,0.7)',
-  },
-  mV: {
-    fontFamily: fonts.extraBold,
-    fontSize: 18,
-    color: colors.white,
-    writingDirection: 'ltr',
   },
   foot: { paddingHorizontal: 18, paddingBottom: 16, gap: 8 },
   line: {

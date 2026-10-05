@@ -6,6 +6,9 @@ import Svg, { Path, Circle } from 'react-native-svg';
 import { colors, fonts } from '../../src/theme';
 import { useApp } from '../../src/store/AppContext';
 
+const TAB_CONTENT_H = 64;
+const MIN_BOTTOM_PAD = 16;
+
 function TabIcon({
   name,
   color,
@@ -15,7 +18,7 @@ function TabIcon({
 }) {
   if (name === 'list') {
     return (
-      <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+      <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
         <Path
           d="M4 6h16M4 12h16M4 18h10"
           stroke={color}
@@ -27,7 +30,7 @@ function TabIcon({
   }
   if (name === 'queue') {
     return (
-      <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+      <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
         <Path
           d="M4 7h16v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7z"
           stroke={color}
@@ -51,7 +54,7 @@ function TabIcon({
     );
   }
   return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
       <Path
         d="M9 11l3 3L22 4"
         stroke={color}
@@ -70,43 +73,71 @@ function TabIcon({
   );
 }
 
+/** Icon + label in one block — default label slot collapses to ~4px on web. */
+function TabItem({
+  name,
+  color,
+  label,
+  badge,
+}: {
+  name: 'list' | 'queue' | 'eod';
+  color: string;
+  label: string;
+  badge?: number;
+}) {
+  return (
+    <View style={styles.item}>
+      <View>
+        <TabIcon name={name} color={color} />
+        {badge && badge > 0 ? (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText} allowFontScaling={false}>
+              {badge > 9 ? '9+' : badge}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+      <Text
+        numberOfLines={1}
+        allowFontScaling={false}
+        style={[styles.label, { color }]}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 export default function CollectorTabs() {
   const { unsyncedCount } = useApp();
   const insets = useSafeAreaInsets();
-  // Cairo labels need extra line box; keep icon + label clear of home indicator
-  const bottomPad = Math.max(insets.bottom, Platform.OS === 'web' ? 10 : 8);
-  const tabBarHeight = 64 + bottomPad;
+  const bottomPad = Math.max(insets.bottom, MIN_BOTTOM_PAD);
 
   return (
     <Tabs
+      safeAreaInsets={{ bottom: 0 }}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.brand,
         tabBarInactiveTintColor: colors.muted,
-        tabBarLabelStyle: {
-          fontFamily: fonts.semiBold,
-          fontSize: 12,
-          lineHeight: 18,
-          marginTop: 0,
-          includeFontPadding: false,
-        },
-        tabBarIconStyle: {
-          marginTop: 4,
-        },
+        tabBarAllowFontScaling: false,
+        tabBarShowLabel: false,
+        tabBarHideOnKeyboard: true,
         tabBarItemStyle: {
-          height: 64,
-          paddingTop: 6,
-          paddingBottom: 4,
+          height: TAB_CONTENT_H,
+          paddingTop: 0,
+          paddingBottom: 0,
         },
         tabBarStyle: {
-          height: tabBarHeight,
+          height: TAB_CONTENT_H + bottomPad,
           paddingBottom: bottomPad,
           paddingTop: 0,
           borderTopColor: colors.border,
           borderTopWidth: 1.5,
           backgroundColor: colors.surface,
+          overflow: 'visible',
+          ...(Platform.OS === 'web' ? ({ zIndex: 10 } as object) : null),
         },
-        tabBarAllowFontScaling: false,
       }}
     >
       <Tabs.Screen
@@ -114,7 +145,7 @@ export default function CollectorTabs() {
         options={{
           title: 'القائمة',
           tabBarIcon: ({ color }) => (
-            <TabIcon name="list" color={String(color)} />
+            <TabItem name="list" color={String(color)} label="القائمة" />
           ),
         }}
       />
@@ -123,16 +154,12 @@ export default function CollectorTabs() {
         options={{
           title: 'الطابور',
           tabBarIcon: ({ color }) => (
-            <View>
-              <TabIcon name="queue" color={String(color)} />
-              {unsyncedCount > 0 ? (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>
-                    {unsyncedCount > 9 ? '9+' : unsyncedCount}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
+            <TabItem
+              name="queue"
+              color={String(color)}
+              label="الطابور"
+              badge={unsyncedCount}
+            />
           ),
         }}
       />
@@ -141,7 +168,7 @@ export default function CollectorTabs() {
         options={{
           title: 'إنهاء اليوم',
           tabBarIcon: ({ color }) => (
-            <TabIcon name="eod" color={String(color)} />
+            <TabItem name="eod" color={String(color)} label="إنهاء اليوم" />
           ),
         }}
       />
@@ -150,6 +177,24 @@ export default function CollectorTabs() {
 }
 
 const styles = StyleSheet.create({
+  item: {
+    height: TAB_CONTENT_H,
+    minWidth: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+  label: {
+    fontFamily: fonts.semiBold,
+    fontSize: 11,
+    lineHeight: 16,
+    includeFontPadding: false,
+    textAlign: 'center',
+    marginTop: 4,
+    // Ensure Cairo dots/descenders stay inside the item box
+    paddingBottom: 2,
+  },
   badge: {
     position: 'absolute',
     top: -4,

@@ -3,18 +3,14 @@ export function roundToNearest250(amount: number): number {
   return Math.round(amount / 250) * 250;
 }
 
-/** Digits only, western grouping — always LTR. */
+/** Digits only, western grouping. */
 export function formatIqd(amount: number): string {
-  const n = Math.trunc(amount);
-  return n.toLocaleString('en-US');
+  return Math.trunc(amount).toLocaleString('en-US');
 }
 
-/**
- * Canonical display: "15,000 د.ع" (number then unit).
- * Uses Unicode LTR isolates so RTL never flips it to "د.ع 15,000".
- */
+/** String form for button labels / messages: "15,000 د.ع" */
 export function formatIqdWithUnit(amount: number): string {
-  return `\u2066${formatIqd(amount)}\u2069\u00A0د.ع`;
+  return `${formatIqd(amount)}\u00A0د.ع`;
 }
 
 export function parseIqdInput(raw: string): number {
