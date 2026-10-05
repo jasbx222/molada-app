@@ -6,11 +6,25 @@ const extra = (Constants.expoConfig?.extra ?? {}) as {
 };
 
 /**
- * Public static build on port 4310 keeps useMockApi=true (see app.json).
- * For local/dev against the ASP.NET API, set extra.useMockApi=false and
- * extra.apiBaseUrl to a reachable host (not localhost from a public tunnel).
+ * Resolution order:
+ * 1) EXPO_PUBLIC_* (Metro inlines at bundle time — used by `export:web:live`)
+ * 2) app.config.js / app.json extra
+ * 3) safe placeholders
+ *
+ * Default app.json keeps useMockApi=true for native Expo Go.
+ * Live web preview builds with:
+ *   EXPO_PUBLIC_USE_MOCK_API=false EXPO_PUBLIC_API_BASE_URL=/api/v1
+ * and is served by tools/preview-server.mjs (proxies /api -> :5080).
  */
-export const API_BASE_URL =
-  extra.apiBaseUrl ?? 'https://api.example.local/api/v1';
+const envMock = process.env.EXPO_PUBLIC_USE_MOCK_API;
+const envBase = process.env.EXPO_PUBLIC_API_BASE_URL;
 
-export const USE_MOCK_API = extra.useMockApi !== false;
+export const API_BASE_URL =
+  (envBase && envBase.length > 0 ? envBase : null) ??
+  extra.apiBaseUrl ??
+  'https://api.example.local/api/v1';
+
+export const USE_MOCK_API =
+  envMock !== undefined && envMock !== ''
+    ? envMock !== 'false' && envMock !== '0'
+    : extra.useMockApi !== false;

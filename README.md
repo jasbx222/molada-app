@@ -88,3 +88,51 @@ npx tsc --noEmit
 - البناء العام المنشور (Cloudflare / port 4310) يبقى على mock — لا تشير إلى `localhost` من نفق عام.
 - حساب تجريبي على الباك: `07701234567` / `1234`.
 
+
+
+## معاينة عامة بنفس الأصل (cloudflared → :4310)
+
+السيرفر `tools/preview-server.mjs` يقدّم ملفات `dist/` ويعيد توجيه `/api/*` إلى الباك على `http://127.0.0.1:5080` — نفس الأصل، بدون CORS ونفق واحد.
+
+```bash
+# 1) باك ASP.NET على 5080 (من مجلد backend)
+export PATH="$HOME/.dotnet:$PATH"
+cd /workspace/generator_app/backend
+nohup env ASPNETCORE_ENVIRONMENT=Development   dotnet run --project src/Molada.Api --urls http://0.0.0.0:5080   > /tmp/molada-api.log 2>&1 &
+
+# 2) بناء الويب على الـ API الحقيقي (مسار نسبي)
+cd /workspace/generator_app/mobile
+npm run export:web:live
+
+# 3) معاينة على 4310 (cloudflared الحالي يشير هنا — لا تعِد تشغيل النفق)
+# أوقف serve القديم على 4310 إن وُجد، ثم:
+nohup node tools/preview-server.mjs 4310 > /tmp/molada-preview.log 2>&1 &
+```
+
+الافتراضي في `app.json` يبقى `useMockApi: true` لتطوير الموبايل. التصدير الحي يستخدم متغيرات `EXPO_PUBLIC_*` عبر `app.config.js`.
+
+
+
+## بناء APK أندرويد (بدون حساب Expo)
+
+الباك التجريبي العام (عبر نفس نفق cloudflared + `tools/preview-server.mjs`):
+
+`https://educated-geek-berry-grows.trycloudflare.com/api/v1`
+
+```bash
+# متطلبات: JDK 17، Android SDK (platform 36 + build-tools 36 + NDK 27.1.12297006)
+export ANDROID_HOME=$HOME/android-sdk
+export ANDROID_SDK_ROOT=$ANDROID_HOME
+export EXPO_PUBLIC_USE_MOCK_API=false
+export EXPO_PUBLIC_API_BASE_URL=https://educated-geek-berry-grows.trycloudflare.com/api/v1
+
+cd mobile
+npx expo prebuild -p android --clean
+echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+# توقيع الإصدار: ملف خارج المستودع /workspace/generator_app/keys/keystore.properties
+cd android && ./gradlew assembleRelease
+cp app/build/outputs/apk/release/app-release.apk /workspace/generator_app/molada-collector.apk
+```
+
+`app.json` يبقى على mock للتطوير. البناء الحي يستخدم `EXPO_PUBLIC_*` عبر `app.config.js`. مجلد `android/` وملفات المفاتيح غير مضمّنة في git.
+

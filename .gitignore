@@ -16,3 +16,11 @@ npm-debug.*
 *.log
 .idea/
 .vscode/
+android/
+ios/
+*.keystore
+keys/
+../keys/
+.kotlin/
+*.apk
+molada-collector.apk
