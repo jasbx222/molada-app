@@ -2,12 +2,11 @@
   "expo": {
     "name": "مولّدة",
     "slug": "molada",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "molada",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "plugins": [
       "expo-router",
       "expo-font",
@@ -26,7 +25,7 @@
       },
       "package": "app.molada.collector",
       "predictiveBackGestureEnabled": false,
-      "versionCode": 2
+      "versionCode": 3
     },
     "web": {
       "favicon": "./assets/favicon.png",
