@@ -9,14 +9,22 @@ interface Props {
 export function OfflinePill({ online = false }: Props) {
   if (online) {
     return (
-      <View style={[styles.pill, styles.online]}>
+      <View
+        style={[styles.pill, styles.online]}
+        accessibilityRole="text"
+        accessibilityLabel="متصل"
+      >
         <View style={[styles.dot, { backgroundColor: colors.moneyBright }]} />
         <Text style={styles.textOnline}>متصل</Text>
       </View>
     );
   }
   return (
-    <View style={styles.pill}>
+    <View
+      style={styles.pill}
+      accessibilityRole="text"
+      accessibilityLabel="بدون نت"
+    >
       <View style={styles.dot} />
       <Text style={styles.text}>بدون نت</Text>
     </View>

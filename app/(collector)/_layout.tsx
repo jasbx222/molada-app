@@ -111,7 +111,9 @@ function TabItem({
 export default function CollectorTabs() {
   const { unsyncedCount } = useApp();
   const insets = useSafeAreaInsets();
-  const bottomPad = Math.max(insets.bottom, MIN_BOTTOM_PAD);
+  // Web has no home-indicator inset; forcing MIN_BOTTOM_PAD left a ~50px gap under tabs.
+  const bottomPad =
+    Platform.OS === 'web' ? 0 : Math.max(insets.bottom, MIN_BOTTOM_PAD);
 
   return (
     <Tabs

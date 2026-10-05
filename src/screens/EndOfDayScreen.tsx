@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
-import { AmountText, PrimaryButton, ScreenHeader } from '../components';
+import { AmountText, OfflinePill, PrimaryButton, ScreenHeader } from '../components';
 import { useApp } from '../store/AppContext';
 import { colors, fonts, radius, shadow, spacing } from '../theme';
 
@@ -46,10 +46,12 @@ export function EndOfDayScreen() {
     }
   };
 
-  const dateLabel = (() => {
+  // Client-only date to avoid SSR/static hydration mismatch (#418)
+  const [dateLabel, setDateLabel] = useState('');
+  React.useEffect(() => {
     const d = new Date();
-    return `${d.getDate()} ت1 ${d.getFullYear()}`;
-  })();
+    setDateLabel(`${d.getDate()} ت1 ${d.getFullYear()}`);
+  }, []);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -58,7 +60,12 @@ export function EndOfDayScreen() {
           title="إنهاء اليوم"
           online={online}
           showBack={false}
-          right={<Text style={styles.date}>{dateLabel}</Text>}
+          right={
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {dateLabel ? <Text style={styles.date}>{dateLabel}</Text> : null}
+              <OfflinePill online={online} />
+            </View>
+          }
         />
         <View style={styles.heroWrap}>
           <Text style={styles.heroLbl}>مجموع النظام · مستلم اليوم</Text>

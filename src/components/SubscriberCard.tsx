@@ -34,6 +34,8 @@ export function SubscriberCard({
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`بطاقة ${subscriber.name}`}
       onPress={onPress}
       style={[styles.card, focused && styles.focus, done && styles.done]}
     >
@@ -60,7 +62,11 @@ export function SubscriberCard({
       </View>
       {focused && invoice.status !== 'paid' ? (
         <Pressable
-          onPress={onReceive}
+          accessibilityRole="button"
+          accessibilityLabel={`استلام من ${subscriber.name}`}
+          onPress={() => {
+            onReceive?.();
+          }}
           style={({ pressed }) => [styles.cta, pressed && { opacity: 0.9 }]}
         >
           <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">

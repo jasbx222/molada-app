@@ -18,7 +18,7 @@ export function BootstrapScreen() {
     try {
       await bootstrap();
       setDone(true);
-      setTimeout(() => router.replace('/(collector)'), 500);
+      router.replace('/(collector)');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'فشل التحديث');
     } finally {

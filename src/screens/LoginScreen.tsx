@@ -13,17 +13,22 @@ import { LogoMark, PrimaryButton } from '../components';
 import { useApp } from '../store/AppContext';
 import { colors, fonts, radius, shadow, spacing } from '../theme';
 import { MOCK_PHONE, MOCK_PIN } from '../api';
+import { DEMO } from '../config';
 
 export function LoginScreen() {
   const router = useRouter();
   const { login } = useApp();
-  const [phone, setPhone] = useState(MOCK_PHONE);
-  const [pin, setPin] = useState(MOCK_PIN);
+  const [phone, setPhone] = useState(DEMO ? MOCK_PHONE : '');
+  const [pin, setPin] = useState(DEMO ? MOCK_PIN : '');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async () => {
     setError(null);
+    if (!phone.trim() || !pin.trim()) {
+      setError('أدخل رقم الهاتف والرمز');
+      return;
+    }
     setLoading(true);
     try {
       await login(phone.trim(), pin.trim());
@@ -61,6 +66,7 @@ export function LoginScreen() {
             placeholder="07xxxxxxxxx"
             placeholderTextColor={colors.muted}
             autoCorrect={false}
+            accessibilityLabel="رقم الهاتف"
           />
           <Text style={[styles.label, { marginTop: 16 }]}>رمز الدخول (PIN)</Text>
           <TextInput
@@ -73,6 +79,7 @@ export function LoginScreen() {
             textAlign="center"
             placeholder="••••"
             placeholderTextColor={colors.muted}
+            accessibilityLabel="رمز الدخول"
           />
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <PrimaryButton
@@ -81,9 +88,11 @@ export function LoginScreen() {
             loading={loading}
             style={{ marginTop: 24 }}
           />
-          <Text style={styles.hint}>
-            تجريبي: {MOCK_PHONE} / PIN {MOCK_PIN}
-          </Text>
+          {DEMO ? (
+            <Text style={styles.hint}>
+              تجريبي: {MOCK_PHONE} / PIN {MOCK_PIN}
+            </Text>
+          ) : null}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

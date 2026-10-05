@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,17 +9,24 @@ import {
   StatusChip,
 } from '../components';
 import { useApp } from '../store/AppContext';
-import { colors, fonts, radius, shadow, spacing } from '../theme';
-import { addressLine, ampLine } from '../utils/format';
+import { colors, fonts, radius, shadow } from '../theme';
+import { addressLine, ampLine, formatDateTimeAr, padReceiptNo } from '../utils/format';
 import { formatIqd, formatIqdWithUnit } from '../utils/money';
 
 export function SubscriberDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { subscribers, getInvoiceFor, online } = useApp();
+  const { subscribers, getInvoiceFor, payments, online } = useApp();
   const subscriber = subscribers.find((s) => s.id === id);
   const invoice = id ? getInvoiceFor(id) : undefined;
+
+  const history = useMemo(() => {
+    if (!id) return [];
+    return payments
+      .filter((p) => p.subscriberId === id)
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  }, [payments, id]);
 
   if (!subscriber || !invoice) {
     return (
@@ -68,6 +75,25 @@ export function SubscriberDetailScreen() {
           <AmountText amount={invoice.remaining} size={44} />
         </View>
 
+        <View style={styles.card}>
+          <Text style={styles.section}>آخر الدفعات</Text>
+          {history.length === 0 ? (
+            <Text style={styles.emptyHist}>لا توجد دفعات بعد</Text>
+          ) : (
+            history.map((p) => (
+              <View key={p.uuid} style={styles.histRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.histNo}>
+                    وصل #{padReceiptNo(p.receiptNo)}
+                  </Text>
+                  <ClientTime iso={p.createdAt} />
+                </View>
+                <AmountText amount={p.amount} size={18} />
+              </View>
+            ))
+          )}
+        </View>
+
         {invoice.status !== 'paid' ? (
           <PrimaryButton
             label="استلام"
@@ -85,6 +111,15 @@ export function SubscriberDetailScreen() {
       </ScrollView>
     </View>
   );
+}
+
+/** Avoid hydration mismatch: format date only after mount. */
+function ClientTime({ iso }: { iso: string }) {
+  const [label, setLabel] = React.useState('');
+  React.useEffect(() => {
+    setLabel(formatDateTimeAr(iso));
+  }, [iso]);
+  return <Text style={styles.histTime}>{label || '—'}</Text>;
 }
 
 function Row({
@@ -180,5 +215,34 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.muted,
     marginBottom: 6,
+  },
+  emptyHist: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.muted,
+    textAlign: 'center',
+    paddingVertical: 8,
+  },
+  histRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F0EBE3',
+    gap: 12,
+  },
+  histNo: {
+    fontFamily: fonts.bold,
+    fontSize: 14,
+    color: colors.text,
+    textAlign: 'right',
+  },
+  histTime: {
+    marginTop: 2,
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.muted,
+    textAlign: 'right',
   },
 });

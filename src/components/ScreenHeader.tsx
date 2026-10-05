@@ -26,9 +26,10 @@ export function ScreenHeader({
       <View style={styles.row}>
         {showBack ? (
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="رجوع"
             onPress={() => router.back()}
             style={styles.back}
-            accessibilityLabel="رجوع"
           >
             <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
               <Path

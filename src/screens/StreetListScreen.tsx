@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,8 @@ import {
   SubscriberCard,
 } from '../components';
 import { useApp, ListFilter } from '../store/AppContext';
-import { colors, fonts, radius, shadow, spacing } from '../theme';
+import { colors, fonts, radius, shadow } from '../theme';
+import { normalizeArabic, subscriberSearchText } from '../utils/arabic';
 
 const FILTERS: { key: ListFilter; label: string }[] = [
   { key: 'unpaid', label: 'مطلوب' },
@@ -41,6 +42,8 @@ export function StreetListScreen() {
     focusedId,
     setFocusedId,
     totals,
+    subscribers,
+    invoices,
   } = useApp();
 
   const countFor = (key: ListFilter): number => {
@@ -49,6 +52,26 @@ export function StreetListScreen() {
     if (key === 'partial') return totals.partialCount;
     return totals.paidCount;
   };
+
+  const filterLabel = FILTERS.find((f) => f.key === filter)?.label ?? '';
+
+  /** Results if we ignored the active status filter but kept the search. */
+  const searchHitsAllFilters = useMemo(() => {
+    if (!search.trim() || filter === 'all') return filteredList.length;
+    // Recompute lightly via totals path: count matching search across all
+    const q = normalizeArabic(search);
+    return subscribers.filter((s) => {
+      const inv = invoices.find((i) => i.subscriberId === s.id);
+      if (!inv) return false;
+      return subscriberSearchText(s).includes(q);
+    }).length;
+  }, [search, filter, filteredList.length, subscribers, invoices]);
+
+  const emptyInActiveFilter =
+    filteredList.length === 0 &&
+    !!search.trim() &&
+    filter !== 'all' &&
+    searchHitsAllFilters > 0;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -110,7 +133,19 @@ export function StreetListScreen() {
             placeholder="اسم · دار · كيبل"
             placeholderTextColor={colors.muted}
             textAlign="right"
+            accessibilityLabel="بحث عن مشترك"
           />
+          {search.length > 0 ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="مسح البحث"
+              onPress={() => setSearch('')}
+              hitSlop={10}
+              style={styles.clearBtn}
+            >
+              <Text style={styles.clearX}>×</Text>
+            </Pressable>
+          ) : null}
         </View>
         <ScrollView
           horizontal
@@ -122,6 +157,9 @@ export function StreetListScreen() {
             return (
               <Pressable
                 key={f.key}
+                accessibilityRole="button"
+                accessibilityLabel={`فلتر ${f.label}`}
+                accessibilityState={{ selected: on }}
                 onPress={() => setFilter(f.key)}
                 style={[styles.chip, on && styles.chipOn]}
               >
@@ -149,14 +187,33 @@ export function StreetListScreen() {
             subscriber={item.subscriber}
             invoice={item.invoice}
             focused={focusedId === item.subscriber.id}
-            onPress={() => setFocusedId(item.subscriber.id)}
+            onPress={() => {
+              setFocusedId(item.subscriber.id);
+              router.push(`/subscriber/${item.subscriber.id}`);
+            }}
             onReceive={() =>
               router.push(`/receive/${item.subscriber.id}`)
             }
           />
         )}
         ListEmptyComponent={
-          <Text style={styles.empty}>لا يوجد مشتركين بهذا الفلتر</Text>
+          emptyInActiveFilter ? (
+            <View style={styles.emptyWrap}>
+              <Text style={styles.empty}>
+                ماكو نتائج بفلتر «{filterLabel}»
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="ابحث بالكل"
+                onPress={() => setFilter('all')}
+                style={styles.searchAllBtn}
+              >
+                <Text style={styles.searchAllText}>ابحث بالكل</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Text style={styles.empty}>لا يوجد مشتركين بهذا الفلتر</Text>
+          )
         }
       />
     </View>
@@ -196,16 +253,16 @@ const styles = StyleSheet.create({
   sCard: {
     flex: 1,
     backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 14,
+    borderRadius: radius.md,
     paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   sLbl: {
     fontFamily: fonts.semiBold,
     fontSize: 11,
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(255,255,255,0.55)',
     marginBottom: 4,
     textAlign: 'right',
   },
@@ -215,41 +272,52 @@ const styles = StyleSheet.create({
     color: colors.white,
     textAlign: 'right',
   },
-  tools: { paddingHorizontal: 16, paddingTop: 14 },
+  tools: { paddingHorizontal: 14, paddingTop: 12, gap: 10 },
   search: {
-    height: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     backgroundColor: colors.surface,
     borderWidth: 1.5,
     borderColor: colors.border,
     borderRadius: radius.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
+    height: 52,
     ...shadow.sm,
   },
   searchInput: {
     flex: 1,
-    fontFamily: fonts.medium,
+    fontFamily: fonts.semiBold,
     fontSize: 15,
     color: colors.text,
+    paddingVertical: 0,
   },
-  filters: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 12,
-    paddingRight: 4,
+  clearBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  clearX: {
+    fontFamily: fonts.bold,
+    fontSize: 20,
+    color: colors.muted,
+    lineHeight: 22,
+    marginTop: -2,
+  },
+  filters: { gap: 8, paddingBottom: 4, paddingEnd: 4 },
   chip: {
-    height: 40,
-    paddingHorizontal: 12,
-    borderRadius: radius.pill,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    height: 40,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
   },
   chipOn: {
     backgroundColor: colors.brand,
@@ -258,27 +326,46 @@ const styles = StyleSheet.create({
   chipText: {
     fontFamily: fonts.bold,
     fontSize: 13,
-    color: colors.muted,
+    color: colors.brand,
   },
   chipTextOn: { color: colors.white },
   chipN: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: radius.pill,
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
   },
-  chipNOff: { backgroundColor: '#F0EBE3' },
+  chipNOff: { backgroundColor: colors.bg },
   chipNText: {
-    fontFamily: fonts.extraBold,
-    fontSize: 13,
+    fontFamily: fonts.bold,
+    fontSize: 11,
     color: colors.white,
   },
-  chipNTextOff: { color: colors.brand },
-  list: { padding: 16, gap: 10, paddingBottom: 24 },
+  chipNTextOff: { color: colors.muted },
+  list: { padding: 14, gap: 10, paddingBottom: 24 },
   empty: {
-    textAlign: 'center',
     marginTop: 40,
+    textAlign: 'center',
     fontFamily: fonts.semiBold,
+    fontSize: 15,
     color: colors.muted,
+  },
+  emptyWrap: { alignItems: 'center', marginTop: 36, gap: 14 },
+  searchAllBtn: {
+    height: 48,
+    paddingHorizontal: 22,
+    borderRadius: radius.md,
+    backgroundColor: colors.money,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadow.money,
+  },
+  searchAllText: {
+    fontFamily: fonts.extraBold,
+    fontSize: 15,
+    color: colors.text,
   },
 });

@@ -167,13 +167,11 @@ export function ReceiptScreen() {
             </View>
             <View style={styles.line}>
               <Text style={styles.lineK}>الوقت</Text>
-              <Text style={styles.lineV}>
-                {formatDateTimeAr(payment.createdAt)}
-              </Text>
+              <ClientCreatedAt iso={payment.createdAt} />
             </View>
             <View style={styles.link}>
               <Text style={styles.linkText}>
-                كشف الحساب · mowallada.app/r/{payment.statementToken.slice(0, 8)}…
+                كشف الحساب · mowallada.app/r/{payment.statementToken}
               </Text>
             </View>
           </View>
@@ -188,19 +186,33 @@ export function ReceiptScreen() {
           label="طباعة (لاحقاً)"
           variant="ghost"
           onPress={onPrint}
+          disabled
           height={56}
           style={{ marginTop: 10 }}
         />
         <PrimaryButton
           label="رجوع للقائمة"
           variant="brand"
-          onPress={() => router.replace('/(collector)')}
+          onPress={() => {
+            if (router.canDismiss()) {
+              router.dismissAll();
+            }
+            router.replace('/(collector)');
+          }}
           height={56}
           style={{ marginTop: 10 }}
         />
       </ScrollView>
     </View>
   );
+}
+
+function ClientCreatedAt({ iso }: { iso: string }) {
+  const [label, setLabel] = React.useState('—');
+  React.useEffect(() => {
+    setLabel(formatDateTimeAr(iso));
+  }, [iso]);
+  return <Text style={styles.lineV}>{label}</Text>;
 }
 
 function Row({
