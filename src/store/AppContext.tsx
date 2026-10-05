@@ -9,6 +9,7 @@ import React, {
 import { api } from '../api';
 import { localDb, initDb } from '../db';
 import { newUuid } from '../utils/uuid';
+import { normalizeArabic, subscriberSearchText } from '../utils/arabic';
 import type {
   CollectorSession,
   DayTotals,
@@ -170,8 +171,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         throw new Error('المبلغ أكبر من المطلوب');
       }
       const receiptNo = await localDb.allocateReceiptNo();
+      const uuid = newUuid();
       const payment: PaymentRecord = {
-        uuid: newUuid(),
+        uuid,
         invoiceId: inv.id,
         subscriberId,
         amount: Math.trunc(amount),
@@ -180,7 +182,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         createdAt: new Date().toISOString(),
         synced: false,
         collectorName: sess.collectorName,
-        statementToken: newUuid().replace(/-/g, '').slice(0, 12),
+        // Same id as the payment/receipt record — one source of truth for statement URL
+        statementToken: uuid,
       };
       await localDb.insertPayment(payment);
       await refreshLocal();
@@ -253,31 +256,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const filteredList = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = normalizeArabic(search);
     const rows = subscribers
       .map((subscriber) => {
         const invoice = invoices.find((i) => i.subscriberId === subscriber.id);
         if (!invoice) return null;
         return { subscriber, invoice };
       })
-      .filter((r): r is { subscriber: Subscriber; invoice: Invoice } => !!r);
+      .filter((r): r is { subscriber: Subscriber; invoice: Invoice } => !!r)
+      .filter(({ subscriber, invoice }) => {
+        if (filter === 'unpaid' && invoice.status !== 'unpaid') return false;
+        if (filter === 'partial' && invoice.status !== 'partial') return false;
+        if (filter === 'paid' && invoice.status !== 'paid') return false;
+        if (!q) return true;
+        return subscriberSearchText(subscriber).includes(q);
+      });
 
-    return rows.filter(({ subscriber, invoice }) => {
-      if (filter === 'unpaid' && invoice.status !== 'unpaid') return false;
-      if (filter === 'partial' && invoice.status !== 'partial') return false;
-      if (filter === 'paid' && invoice.status !== 'paid') return false;
-      if (!q) return true;
-      const hay = [
-        subscriber.name,
-        subscriber.alley,
-        subscriber.house,
-        subscriber.cableNo,
-        subscriber.phone,
-      ]
-        .join(' ')
-        .toLowerCase();
-      return hay.includes(q);
+    // Stable order: زقاق (numeric) → دار (numeric) → name
+    rows.sort((a, b) => {
+      const alleyA = parseInt(a.subscriber.alley, 10) || 0;
+      const alleyB = parseInt(b.subscriber.alley, 10) || 0;
+      if (alleyA !== alleyB) return alleyA - alleyB;
+      const houseA = parseInt(a.subscriber.house, 10) || 0;
+      const houseB = parseInt(b.subscriber.house, 10) || 0;
+      if (houseA !== houseB) return houseA - houseB;
+      return a.subscriber.name.localeCompare(b.subscriber.name, 'ar');
     });
+    return rows;
   }, [subscribers, invoices, filter, search]);
 
   const unsyncedCount = useMemo(
